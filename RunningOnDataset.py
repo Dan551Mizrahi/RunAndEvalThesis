@@ -2,63 +2,33 @@ import os
 from tqdm import tqdm
 from pebble import ProcessPool
 from concurrent.futures import TimeoutError
-from PreprocessEnumRunEval import running_times
-from PyMELib.TreeDecompositions import RootedDisjointBranchNiceTreeDecomposition
+from PreprocessEnumRunEval import running_times_in_dict
 from PyMELib.utils.readHypergraphFromFile import read_hypergraph, MAX_CHR
-from PyMELib.TreeDecompositions import NodeType
 from memoryManagement import memory_limit_p
+from RootMeasures import *
 from WritingResultsToJSON import save_dict_to_json
 import networkx as nx
 import json
 import sys
+import argparse
 
 sys.setrecursionlimit(1500)
 
-def Hypergraph_features(file_path: str):
+def timeout_memoryout_recursion_handler(what_happened: str, file_path: str):
+    parent_path = os.path.dirname(os.path.dirname(file_path))
+    file_name = os.path.basename(file_path)
+    data_folder = os.path.join(parent_path, "data")
+    data_file_path = os.path.join(data_folder, file_name.split('.')[0] + "_data.json")
 
-    def count_join_nodes(tree_decomposition: RootedDisjointBranchNiceTreeDecomposition) -> dict:
-        """Counts the number of vertices in the bag of each join node in a rooting of a nice tree decomposition.
-        :param (Disjoint Nice) tree_decomposition: RootedDisjointBranchNiceTreeDecomposition
-        :return: dict
-        """
-        return_dict = dict()
-        for node in tree_decomposition.nodes:
-            if tree_decomposition.nodes[node]['type'] == NodeType.JOIN:
-                return_dict[node] = len(tree_decomposition.nodes[node]['bag'])
-        return return_dict
-
-    def count_branching(tree_decomposition: RootedDisjointBranchNiceTreeDecomposition) -> dict:
-        """Counts the number of branches for each vertex in a rooting of a nice tree decomposition.
-        :param (Disjoint Nice) tree_decomposition: RootedDisjointBranchNiceTreeDecomposition
-        :return: dict
-        """
-        help_dict = {chr(vertex): set() for vertex in tree_decomposition.original_graph.nodes}
-        for node in tree_decomposition.nodes:
-            for vertex in tree_decomposition.nodes[node]['bag']:
-                help_dict[vertex[0]].add(tree_decomposition.nodes[node]['br'])
-
-        return {vertex: len(help_dict[vertex]) for vertex in help_dict}
+    try:
+        with open(data_file_path, 'r') as f:
+            existing_data = json.load(f)
+    except FileNotFoundError:
+        existing_data = {}
+    except json.JSONDecodeError:
+        existing_data = {}
 
     hypergraph = read_hypergraph(file_path)
-    try:
-        rooted_dntd = RootedDisjointBranchNiceTreeDecomposition(hypergraph)
-    except RecursionError:
-        return {
-            "Num of Vertices": "R",
-            "Num of Hyperedges": "R",
-            "n + m": "R",
-            "Max Hyperedge Size": "R",
-            "Min Hyperedge Size": "R",
-            "Avg Hyperedge Size": "R",
-            "Size of Hypergraph": "R",
-            "Number of Connected Components": "R",
-            "Treewidth": "R",
-            "Number of Join Nodes": "R",
-            "Size of Join Nodes": "R",
-            "Special Join Measure": "R",
-            "Number of Branching": "R",
-            "Max Branching": "R",
-        }
 
     no_reduction_graph = hypergraph.copy()
     no_reduction_graph.remove_node(MAX_CHR)
@@ -78,16 +48,7 @@ def Hypergraph_features(file_path: str):
     # Get the number of connected components
     num_connected_components = nx.number_connected_components(no_reduction_graph)
 
-    # Root measures
-    dict_of_join_nodes = count_join_nodes(rooted_dntd)
-    number_of_join_nodes = len(dict_of_join_nodes)
-    size_of_join_nodes = sum(dict_of_join_nodes.values())
-    special_join_measure = sum({5 ** l for l in dict_of_join_nodes.values()})
-    dict_of_branches = count_branching(rooted_dntd)
-    number_of_branching = sum(dict_of_branches.values())
-    max_branching = max(dict_of_branches.values())
-
-    return {
+    existing_data.update({
         "Num of Vertices": num_vertices,
         "Num of Hyperedges": num_hyperedges,
         "n + m": num_vertices + num_hyperedges,
@@ -95,28 +56,40 @@ def Hypergraph_features(file_path: str):
         "Min Hyperedge Size": min(hyperedges_size),
         "Avg Hyperedge Size": sum(hyperedges_size) / len(hyperedges_size),
         "Size of Hypergraph": num_vertices + sum(hyperedges_size),
-        "Number of Connected Components": num_connected_components,
-        "Treewidth": rooted_dntd.width,
-        "Number of Join Nodes": number_of_join_nodes,
-        "Size of Join Nodes": size_of_join_nodes,
-        "Special Join Measure": special_join_measure,
-        "Number of Branching": number_of_branching,
-        "Max Branching": max_branching,
-    }
+        "Number of Connected Components": num_connected_components})
+    if not what_happened != "Recursion":
+        td = RootedDisjointBranchNiceTreeDecomposition(hypergraph)
+        # Root measures
+        dict_of_join_nodes = count_join_nodes(td)
+        number_of_join_nodes = len(dict_of_join_nodes)
+        size_of_join_nodes = sum(dict_of_join_nodes.values())
+        special_join_measure = sum({5 ** l for l in dict_of_join_nodes.values()})
+        real_effective_width = max(dict_of_join_nodes.values()) - 1
+        dict_of_branches = count_branching(td)
+        number_of_branching = sum(dict_of_branches.values())
+        max_branching = max(dict_of_branches.values())
+        existing_data.update({"Treewidth": td.width,
+            "Number of Join Nodes": number_of_join_nodes,
+            "Size of Join Nodes": size_of_join_nodes,
+            "Special Join Measure": special_join_measure,
+            "Number of Branching": number_of_branching,
+            "Max Branching": max_branching,
+            "Real Effective Width": real_effective_width})
+    else:
+        existing_data.update({"Treewidth": what_happened,
+            "Number of Join Nodes": what_happened,
+            "Size of Join Nodes": what_happened,
+            "Special Join Measure": what_happened,
+            "Number of Branching": what_happened,
+            "Max Branching": what_happened,
+            "Real Effective Width": what_happened})
 
-def timeout_memoryout_handler(what_happened: str, file_path: str):
-    parent_path = os.path.dirname(os.path.dirname(file_path))
-    file_name = os.path.basename(file_path)
-    data_folder = os.path.join(parent_path, "data")
-    data_file_path = os.path.join(data_folder, file_name.split('.')[0] + "_data.json")
+    existing_data["Preprocessing Runtime"] = what_happened
+    existing_data["Number of Minimal Hitting Sets"] = what_happened
+    existing_data["Delays"] = what_happened
+    existing_data["Average delay"] = what_happened
 
-    try:
-        with open(data_file_path, 'r') as f:
-            existing_data = json.load(f)
-    except FileNotFoundError:
-        existing_data = {}
-    except json.JSONDecodeError:
-        existing_data = {}
+    save_dict_to_json(existing_data, data_file_path)
 
 
 def help_pool_server(file_path: str):
@@ -135,17 +108,14 @@ def help_pool_server(file_path: str):
     except json.JSONDecodeError:
         existing_data = {}
 
-    if "Treewidth" not in existing_data.keys():
-        existing_data.update(Hypergraph_features(file_path))
-
     if "Preprocessing Runtime" not in existing_data.keys():
-        existing_data.update(running_times(file_path))
+        existing_data.update(running_times_in_dict(file_path))
 
     # Write the updated dictionary to the file
     save_dict_to_json(existing_data, data_file_path)
 
 
-def writing_of_an_entire_folder_server(folder_path: str, max_for_one = 5):
+def writing_of_an_entire_folder_server(folder_path: str):
 
 
     with ProcessPool(9, max_tasks=2) as pool:
@@ -153,7 +123,7 @@ def writing_of_an_entire_folder_server(folder_path: str, max_for_one = 5):
         data_folder = os.path.join(folder_path, "data")
         os.makedirs(data_folder, exist_ok=True)
 
-        list1 = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith(".dat") or file.endswith(".graph")][:max_for_one]
+        list1 = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith(".dat") or file.endswith(".graph")]
         futures = []
         for i, file_path in enumerate(list1):  # Use enumerate to get indices
             future = pool.schedule(help_pool_server, args=[file_path], timeout=6000)
@@ -167,10 +137,19 @@ def writing_of_an_entire_folder_server(folder_path: str, max_for_one = 5):
                 print(future.result())
             except TimeoutError:
                 # Handle timeout
+                timeout_memoryout_recursion_handler("Timeout", file_path)
                 print(f"Process {file_path} timed out!")
             except MemoryError:
                 # Handle memory error
+                timeout_memoryout_recursion_handler("Memory", file_path)
                 print(f"Process {file_path}_id.txt Memory!")
+            except RecursionError:
+                # Handle recursion error
+                timeout_memoryout_recursion_handler("Recursion", file_path)
+                print(f"Process {file_path} Recursion!")
 
 if __name__ == "__main__":
-    print("ok")
+    parser = argparse.ArgumentParser(description="Testing the algorithms on a folder of files, extracting features and performance metrics.")
+    parser.add_argument("folder_path", type=str, help="Path to the folder containing the files.")
+    args = parser.parse_args()
+    writing_of_an_entire_folder_server(args.folder_path)
