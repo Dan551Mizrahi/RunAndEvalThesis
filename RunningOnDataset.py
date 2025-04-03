@@ -125,14 +125,13 @@ def writing_of_an_entire_folder_server(folder_path: str):
 
         list1 = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith(".dat") or file.endswith(".graph")]
         futures = []
+        print(list1)
         for i, file_path in enumerate(list1):  # Use enumerate to get indices
             future = pool.schedule(help_pool_server, args=[file_path], timeout=6000)
             futures.append((i, future))  # Store index with future
 
         for i, future in tqdm(futures):
             file_path = list1[i]
-            file_name = os.path.basename(file_path)
-            data_file_path = os.path.join(data_folder, file_name.split('.')[0] + "_data.json")
             try:
                 print(future.result())
             except TimeoutError:
