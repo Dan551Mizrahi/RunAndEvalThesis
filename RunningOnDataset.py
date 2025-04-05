@@ -92,10 +92,10 @@ def timeout_memoryout_recursion_handler(what_happened: str, file_path: str):
     save_dict_to_json(existing_data, data_file_path)
 
 
-def help_pool_server(file_path: str, memory_limit = False):
+def help_pool_server(file_path: str, memory_limit = True):
 
     if memory_limit:
-        memory_limit_p(0.1)
+        memory_limit_p(0.175)
 
     parent_path = os.path.dirname(file_path)
     file_name = os.path.basename(file_path)
@@ -117,13 +117,13 @@ def help_pool_server(file_path: str, memory_limit = False):
     save_dict_to_json(existing_data, data_file_path)
 
 
-def writing_of_an_entire_folder_server(folder_path: str, multiprocessing: bool = False):
+def writing_of_an_entire_folder_server(folder_path: str, multiprocessing: bool = True):
     list1 = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if
              file.endswith(".dat") or file.endswith(".graph")]
     data_folder = os.path.join(folder_path, "data")
     os.makedirs(data_folder, exist_ok=True)
     if multiprocessing:
-        with ProcessPool(9, max_tasks=2) as pool:
+        with ProcessPool(5, max_tasks=2) as pool:
             # Create a data folder
 
             futures = []
