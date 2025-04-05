@@ -92,10 +92,12 @@ def timeout_memoryout_recursion_handler(what_happened: str, file_path: str):
     save_dict_to_json(existing_data, data_file_path)
 
 
-def help_pool_server(file_path: str):
-    memory_limit_p(0.1)
+def help_pool_server(file_path: str, memory_limit = False):
 
-    parent_path = os.path.dirname(os.path.dirname(file_path))
+    if memory_limit:
+        memory_limit_p(0.1)
+
+    parent_path = os.path.dirname(file_path)
     file_name = os.path.basename(file_path)
     data_folder = os.path.join(parent_path, "data")
     data_file_path = os.path.join(data_folder, file_name.split('.')[0] + "_data.json")
@@ -115,40 +117,42 @@ def help_pool_server(file_path: str):
     save_dict_to_json(existing_data, data_file_path)
 
 
-def writing_of_an_entire_folder_server(folder_path: str):
+def writing_of_an_entire_folder_server(folder_path: str, multiprocessing: bool = False):
+    list1 = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if
+             file.endswith(".dat") or file.endswith(".graph")]
+    data_folder = os.path.join(folder_path, "data")
+    os.makedirs(data_folder, exist_ok=True)
+    if multiprocessing:
+        with ProcessPool(9, max_tasks=2) as pool:
+            # Create a data folder
 
+            futures = []
 
-    with ProcessPool(9, max_tasks=2) as pool:
-        # Create a data folder
-        data_folder = os.path.join(folder_path, "data")
-        os.makedirs(data_folder, exist_ok=True)
+            for i, file_path in enumerate(list1):  # Use enumerate to get indices
+                future = pool.schedule(help_pool_server, args=[file_path], timeout=6000)
+                futures.append((i, future))  # Store index with future
 
-        list1 = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith(".dat") or file.endswith(".graph")]
-        futures = []
-        print(list1)
-        for i, file_path in enumerate(list1):  # Use enumerate to get indices
-            future = pool.schedule(help_pool_server, args=[file_path], timeout=6000)
-            futures.append((i, future))  # Store index with future
-
-        for i, future in tqdm(futures):
-            file_path = list1[i]
-            try:
-                print(future.result())
-            except TimeoutError:
-                # Handle timeout
-                timeout_memoryout_recursion_handler("Timeout", file_path)
-                print(f"Process {file_path} timed out!")
-            except MemoryError:
-                # Handle memory error
-                timeout_memoryout_recursion_handler("Memory", file_path)
-                print(f"Process {file_path}_id.txt Memory!")
-            except RecursionError:
-                # Handle recursion error
-                timeout_memoryout_recursion_handler("Recursion", file_path)
-                print(f"Process {file_path} Recursion!")
+            for i, future in tqdm(futures):
+                file_path = list1[i]
+                try:
+                    result = future.result()
+                except TimeoutError:
+                    # Handle timeout
+                    timeout_memoryout_recursion_handler("Timeout", file_path)
+                    print(f"Process {file_path} timed out!")
+                except MemoryError:
+                    # Handle memory error
+                    timeout_memoryout_recursion_handler("Memory", file_path)
+                    print(f"Process {file_path}_id.txt Memory!")
+                except RecursionError:
+                    # Handle recursion error
+                    timeout_memoryout_recursion_handler("Recursion", file_path)
+                    print(f"Process {file_path} Recursion!")
+    else:
+        pass
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Testing the algorithms on a folder of files, extracting features and performance metrics.")
     parser.add_argument("folder_path", type=str, help="Path to the folder containing the files.")
     args = parser.parse_args()
-    writing_of_an_entire_folder_server(args.folder_path)
+    writing_of_an_entire_folder_server(args.folder_path, multiprocessing=True)

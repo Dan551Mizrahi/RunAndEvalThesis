@@ -5,7 +5,6 @@ from PyMELib.EnumerationAlgorithms import *
 from RootMeasures import *
 import networkx as nx
 
-
 def Hypergraph_features(file_path: str, td: RootedDisjointBranchNiceTreeDecomposition):
 
     hypergraph = read_hypergraph(file_path)
@@ -39,7 +38,10 @@ def Hypergraph_features(file_path: str, td: RootedDisjointBranchNiceTreeDecompos
     number_of_join_nodes = len(dict_of_join_nodes)
     size_of_join_nodes = sum(dict_of_join_nodes.values())
     special_join_measure = sum({5 ** l for l in dict_of_join_nodes.values()})
-    real_effective_width = max(dict_of_join_nodes.values()) - 1
+    if len(dict_of_join_nodes) > 0:
+        real_effective_width = max(dict_of_join_nodes.values()) - 1
+    else:
+        real_effective_width = 0
     dict_of_branches = count_branching(td)
     number_of_branching = sum(dict_of_branches.values())
     max_branching = max(dict_of_branches.values())
@@ -50,9 +52,11 @@ def Hypergraph_features(file_path: str, td: RootedDisjointBranchNiceTreeDecompos
         "n + m": num_vertices + num_hyperedges,
         "Max Hyperedge Size": max(hyperedges_size),
         "Min Hyperedge Size": min(hyperedges_size),
-        "Avg Hyperedge Size": sum(hyperedges_size) / len(hyperedges_size),
+        "Avg Hyperedge Size": round(sum(hyperedges_size) / len(hyperedges_size), 2),
         "Size of Hypergraph": num_vertices + sum(hyperedges_size),
         "Number of Connected Components": num_connected_components,
+        'Diameter': nx.diameter(hypergraph),
+        'Sparsity': round(nx.density(no_reduction_graph), 4),
         "Treewidth": td.width,
         "Number of Join Nodes": number_of_join_nodes,
         "Size of Join Nodes": size_of_join_nodes,
@@ -103,8 +107,9 @@ def running_times_in_dict(path: str, **kwargs) -> dict:
     return_dict["Preprocess Runtime"] = preprocess_runtime
     return_dict["Number of Minimal Hitting Sets"] = len(Y)
     return_dict["Delays"] = Y
-    return_dict["Average delay"] = sum(Y)/len(Y)
+    return_dict["Average delay"] = round(sum(Y)/len(Y), 8)
     return return_dict
 
 if __name__ == '__main__':
-    print(running_times_in_dict("/Users/dan/PycharmProjects/RunAndEval/dataset_test/hypergraph_76_nodes_35_hyperedges_35_p_0.01_from_tree.dat"))
+
+    pass
