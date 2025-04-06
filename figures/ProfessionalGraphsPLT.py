@@ -490,7 +490,7 @@ def plot_enum_delays(data, split_property=None, cutoff=None):
                      saving_title=f"enumeration_cumulative_time_split_{split_property}_cutoff_{cutoff}.pdf",
                      split_name=split_property, split_values=split_values,)
 
-def two_properties_graph(data, x_property, y_property):
+def two_properties_graph(data, x_property, y_property, scatter=False):
     """
     Plots the relationship between two properties of the data.
     :param data: list of dictionaries.
@@ -506,7 +506,8 @@ def two_properties_graph(data, x_property, y_property):
 
     create_data_plot(X, Y, x_property, y_property,
                      title=f'{y_property} against {x_property}',
-                     saving_title=f'{y_property}_against_{x_property}.pdf')
+                     saving_title=f'{y_property}_against_{x_property}.pdf',
+                     scatter=scatter)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process and plot data from JSON files.')
@@ -517,5 +518,5 @@ if __name__ == "__main__":
     for f in os.listdir(path_to_data):
         if f.endswith(".json"):
             total_list.append(read_json_to_dict(os.path.join(path_to_data, f)))
-    plot_enum_delays(total_list, split_property="Real Effective Width")
-    two_properties_graph(total_list, "Real Effective Width","Preprocess Runtime")
+    # plot_enum_delays(total_list, split_property="Real Effective Width")
+    two_properties_graph(total_list, "Number of Join Nodes","Preprocess Runtime", scatter=True)

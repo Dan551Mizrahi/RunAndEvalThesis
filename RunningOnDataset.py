@@ -166,5 +166,13 @@ def writing_of_an_entire_folder_server(folder_path: str, multiprocessing: bool =
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Testing the algorithms on a folder of files, extracting features and performance metrics.")
     parser.add_argument("folder_path", type=str, help="Path to the folder containing the files.")
+    parser.add_argument("-d", "--folder_of_datasets", action="store_true", help="")
     args = parser.parse_args()
-    writing_of_an_entire_folder_server(args.folder_path, multiprocessing=True)
+    if args.folder_of_datasets:
+        all_dirs = os.listdir(args.folder_path)
+        for dir1 in all_dirs:
+            folder_path = os.path.join(args.folder_path, dir1)
+            if os.path.isdir(folder_path):
+                writing_of_an_entire_folder_server(folder_path, multiprocessing=True)
+    else:
+        writing_of_an_entire_folder_server(args.folder_path, multiprocessing=True)

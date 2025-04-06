@@ -58,6 +58,7 @@ def Hypergraph_features(file_path: str, td: RootedDisjointBranchNiceTreeDecompos
         'Diameter': nx.diameter(hypergraph),
         'Sparsity': round(nx.density(no_reduction_graph), 4),
         "Treewidth": td.width,
+        "(m + n) * tw": (num_vertices + num_hyperedges) * td.width,
         "Number of Join Nodes": number_of_join_nodes,
         "Size of Join Nodes": size_of_join_nodes,
         "Special Join Measure": special_join_measure,
