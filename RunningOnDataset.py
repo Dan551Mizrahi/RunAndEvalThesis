@@ -12,7 +12,7 @@ import json
 import sys
 import argparse
 
-sys.setrecursionlimit(1500)
+sys.setrecursionlimit(1700)
 
 def timeout_memoryout_recursion_handler(what_happened: str, file_path: str):
     parent_path = os.path.dirname(os.path.dirname(file_path))
@@ -96,25 +96,37 @@ def help_pool_server(file_path: str, memory_limit = True):
 
     if memory_limit:
         memory_limit_p(0.175)
-
-    parent_path = os.path.dirname(file_path)
-    file_name = os.path.basename(file_path)
-    data_folder = os.path.join(parent_path, "data")
-    data_file_path = os.path.join(data_folder, file_name.split('.')[0] + "_data.json")
-
     try:
-        with open(data_file_path, 'r') as f:
-            existing_data = json.load(f)
-    except FileNotFoundError:
-        existing_data = {}
-    except json.JSONDecodeError:
-        existing_data = {}
+        parent_path = os.path.dirname(file_path)
+        file_name = os.path.basename(file_path)
+        data_folder = os.path.join(parent_path, "data")
+        data_file_path = os.path.join(data_folder, file_name.split('.')[0] + "_data.json")
 
-    if "Preprocessing Runtime" not in existing_data.keys():
-        existing_data.update(running_times_in_dict(file_path))
+        try:
+            with open(data_file_path, 'r') as f:
+                existing_data = json.load(f)
+        except FileNotFoundError:
+            existing_data = {}
+        except json.JSONDecodeError:
+            existing_data = {}
 
-    # Write the updated dictionary to the file
-    save_dict_to_json(existing_data, data_file_path)
+        if "Preprocessing Runtime" not in existing_data.keys():
+            existing_data.update(running_times_in_dict(file_path))
+
+        # Write the updated dictionary to the file
+        save_dict_to_json(existing_data, data_file_path)
+    except TimeoutError:
+        # Handle timeout
+        timeout_memoryout_recursion_handler("Timeout", file_path)
+        print(f"Process {file_path} timed out!")
+    except MemoryError:
+        # Handle memory error
+        timeout_memoryout_recursion_handler("Memory", file_path)
+        print(f"Process {file_path}_id.txt Memory!")
+    except RecursionError:
+        # Handle recursion error
+        timeout_memoryout_recursion_handler("Recursion", file_path)
+        print(f"Process {file_path} Recursion!")
 
 
 def writing_of_an_entire_folder_server(folder_path: str, multiprocessing: bool = True):

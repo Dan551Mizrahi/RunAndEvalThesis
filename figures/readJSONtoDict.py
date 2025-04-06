@@ -16,4 +16,5 @@ def read_json_to_dict(file_path: str) -> dict:
         return data
     except Exception as e:
         print(f"Error reading JSON file: {e}")
+        print(file_path)
         return {}

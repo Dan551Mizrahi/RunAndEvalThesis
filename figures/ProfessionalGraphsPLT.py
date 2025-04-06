@@ -510,11 +510,12 @@ def two_properties_graph(data, x_property, y_property):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process and plot data from JSON files.')
-    parser.add_argument('--path_to_data', type=str, default="/Users/dan/PycharmProjects/RunAndEval/dataset_test/data")
+    parser.add_argument('--path_to_data', type=str, default="/Users/dan/Desktop/data")
     args = parser.parse_args()
     path_to_data = args.path_to_data
     total_list = []
     for f in os.listdir(path_to_data):
-        total_list.append(read_json_to_dict(os.path.join(path_to_data, f)))
+        if f.endswith(".json"):
+            total_list.append(read_json_to_dict(os.path.join(path_to_data, f)))
     plot_enum_delays(total_list, split_property="Real Effective Width")
     two_properties_graph(total_list, "Real Effective Width","Preprocess Runtime")

@@ -17,7 +17,7 @@ def save_dict_to_json(data, file_path):
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
         with open(file_path, 'w') as f:
-            json.dump(data, f, indent=4, default=lambda x: str(x))  # Use indent for better readability
+            json.dump(data, f, indent=4, default=lambda x: str(x))
         return True
     except Exception as e:
         print(f"Error saving dictionary to JSON: {e}")
