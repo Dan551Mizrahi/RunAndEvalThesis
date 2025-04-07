@@ -176,5 +176,6 @@ if __name__ == "__main__":
             folder_path = os.path.join(args.folder_path, dir1)
             if os.path.isdir(folder_path):
                 writing_of_an_entire_folder_server(folder_path, multiprocessing=True)
+            print("Finished folder:", dir1)
     else:
         writing_of_an_entire_folder_server(args.folder_path, multiprocessing=True)
