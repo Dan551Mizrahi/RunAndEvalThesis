@@ -7,9 +7,9 @@ import os
 from readJSONtoDict import read_json_to_dict
 import argparse
 
-colors = ['k', 'r', 'g', 'b', 'm', 'c', 'y']
+colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k']
 
-def create_data_scatter_plot(X, Y, x_name, y_name, split_name=False, split_values=None, title=None, saving_title=None, p=None):
+def create_data_scatter_plot(X, Y, x_name, y_name, X_avg=None, Y_avg=None, split_name=False, split_values=None, title=None, saving_title=None, p=None):
 
     # Create the plot
     plt.figure(figsize=(8, 6))
@@ -35,6 +35,10 @@ def create_data_scatter_plot(X, Y, x_name, y_name, split_name=False, split_value
     if p:
         plt.plot(X, p(X), "r-")
 
+    if X_avg:
+        X_avg, Y_avg = zip(*sorted(zip(X_avg, Y_avg)))
+        plt.plot(X_avg, Y_avg, color='red', marker='s', linestyle='--')
+
     # Set axis labels and font size
     plt.xlabel(x_name, fontsize=12)
     plt.ylabel(y_name, fontsize=12)
@@ -58,7 +62,7 @@ def create_data_scatter_plot(X, Y, x_name, y_name, split_name=False, split_value
 def create_data_plot(X, Y, x_name, y_name, X_avg=None, Y_avg=None, split_name=False, split_values=None, scatter = False, title=None, saving_title=None, p=None):
 
     if scatter:
-        return create_data_scatter_plot(X, Y, x_name, y_name, split_name, split_values, title=title, saving_title=saving_title, p=p)
+        return create_data_scatter_plot(X, Y, x_name, y_name, split_name=split_name, split_values=split_values, title=title, saving_title=saving_title, p=p, X_avg=X_avg, Y_avg=Y_avg)
 
     # Create the plot
     plt.figure(figsize=(8, 6))
@@ -93,7 +97,7 @@ def create_data_plot(X, Y, x_name, y_name, X_avg=None, Y_avg=None, split_name=Fa
 
     if X_avg:
         X_avg, Y_avg = zip(*sorted(zip(X_avg, Y_avg)))
-        plt.plot(X_avg, Y_avg, color='orange', marker='s', linestyle='--')
+        plt.plot(X_avg, Y_avg, color='red', marker='s', linestyle='--')
 
     # Set axis labels and font size
     plt.xlabel(x_name, fontsize=12)
@@ -308,19 +312,17 @@ def process_and_plot_data_preprocessing(data):
 def process_and_plot_data_enum(data):
     filtered_data = []
     for d in data:
-        if "preprocess_runtime" in d:
-            if 100 <= d.get("number of hitting sets", 0):
-                if 45 <= d.get("nodes + hyperedges", 0) <= 70:
-                    filtered_data.append(d)
+        if 5 <= d.get("Treewidth", 0) <= 11:
+            filtered_data.append(d)
 
     grouped_data = {}
     for d in filtered_data:
-        treewidth = d.get("Tree Width")
+        treewidth = d.get("Treewidth")
         if treewidth is not None and treewidth > 0:
             if treewidth not in grouped_data:
                 grouped_data[treewidth] = []
-            if d["preprocess_runtime"] > 0:
-                grouped_data[treewidth].append((eval(d["delays"]), d["(m+n)*w"]))
+            if d["Preprocess Runtime"] > 0:
+                grouped_data[treewidth].append((d["Delays"], d["(m + n) * tw"]))
 
     i = 0
     while i<100000:
@@ -410,31 +412,31 @@ def process_and_plot_data_enum(data):
 def process_and_plot_data_enum_scatter(data):
     filtered_data = []
     for d in data:
-        if "preprocess_runtime" in d:
-            if d.get("number of hitting sets", 0) > 1:
-                filtered_data.append(d)
+        if 4 <= d.get("Treewidth", 0) <= 10:
+            filtered_data.append(d)
 
     X = []
     Y = []
     for dict1 in filtered_data:
-        X.append(dict1["(m+n)*w"])
-        Y.append(sum(eval(dict1["delays"]))/len(eval(dict1["delays"])))
+        X.append(dict1["(m + n) * tw"])
+        Y.append(dict1["Delays"][-1]/len(dict1["Delays"]))
 
     create_data_plot(X, Y, r'$(m + n) \cdot TW$', 'The average delay (seconds)',
                         title=r'Average delay of the enumeration',
                         saving_title="figure_Enum_scatter1.pdf",
                         scatter=True)
     # The same, but divided by treewidth
-    X = [[] for _ in range(2, 8)]
-    Y = [[] for _ in range(2, 8)]
+    X = [[] for _ in range(4, 11)]
+    Y = [[] for _ in range(4, 11)]
     for dict1 in filtered_data:
-        X[int(dict1["Tree Width"]) - 2].append(dict1["(m+n)*w"])
-        Y[int(dict1["Tree Width"]) - 2].append(sum(eval(dict1["delays"])) / len(eval(dict1["delays"])))
+        print(dict1["Treewidth"])
+        X[int(dict1["Treewidth"]) - 4].append(dict1["(m + n) * tw"])
+        Y[int(dict1["Treewidth"]) - 4].append(dict1["Delays"][-1] / len(dict1["Delays"]))
 
     create_data_plot(X, Y, r'$(m + n) \cdot TW$', 'The average delay (seconds)',
                      title=r'Average delay of the enumeration',
                      saving_title="figure_Enum_scatter2.pdf",
-                     split_name="Treewidth", split_values=range(2, 8),
+                     split_name="Treewidth", split_values=range(4, 11),
                      scatter=True)
 
     X = []
@@ -490,7 +492,7 @@ def plot_enum_delays(data, split_property=None, cutoff=None):
                      saving_title=f"enumeration_cumulative_time_split_{split_property}_cutoff_{cutoff}.pdf",
                      split_name=split_property, split_values=split_values,)
 
-def two_properties_graph(data, x_property, y_property, scatter=False):
+def two_properties_graph(data, x_property, y_property, scatter=False, trend_line=False):
     """
     Plots the relationship between two properties of the data.
     :param data: list of dictionaries.
@@ -499,24 +501,41 @@ def two_properties_graph(data, x_property, y_property, scatter=False):
     """
     X = []
     Y = []
+
     for d in data:
         if x_property in d and y_property in d:
+            if d[x_property] >16:
+                continue
             X.append(d[x_property])
             Y.append(d[y_property])
-
-    create_data_plot(X, Y, x_property, y_property,
-                     title=f'{y_property} against {x_property}',
-                     saving_title=f'{y_property}_against_{x_property}.pdf',
-                     scatter=scatter)
+    if scatter and trend_line:
+        Y_avg_lists = [[] for _ in set(X)]
+        X_avg = sorted(set(X))
+        for i, y in enumerate(Y):
+            Y_avg_lists[X_avg.index(X[i])].append(y)
+        Y_avg = [sum(l) / len(l) for l in Y_avg_lists]
+    if scatter and trend_line:
+        create_data_plot(X, Y, x_property, y_property,
+                         X_avg=X_avg, Y_avg=Y_avg,
+                         title=f'{y_property} against {x_property}',
+                         saving_title=f'{y_property}_against_{x_property}_Trend.pdf',
+                         scatter=scatter)
+    else:
+        create_data_plot(X, Y, x_property, y_property,
+                         title=f'{y_property} against {x_property}',
+                         saving_title=f'{y_property}_against_{x_property}.pdf',
+                         scatter=scatter)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process and plot data from JSON files.')
-    parser.add_argument('--path_to_data', type=str, default="/Users/dan/Desktop/data")
+    parser.add_argument('--path_to_data', type=str, default="/Users/dan/Desktop/data2")
     args = parser.parse_args()
     path_to_data = args.path_to_data
     total_list = []
     for f in os.listdir(path_to_data):
         if f.endswith(".json"):
             total_list.append(read_json_to_dict(os.path.join(path_to_data, f)))
-    # plot_enum_delays(total_list, split_property="Real Effective Width")
-    two_properties_graph(total_list, "Number of Join Nodes","Preprocess Runtime", scatter=True)
+    # plot_enum_delays(total_list)
+    # two_properties_graph(total_list, "Real Effective Width","Preprocess Runtime", scatter=True, trend_line=True)
+    process_and_plot_data_enum(total_list)
+    process_and_plot_data_enum_scatter(total_list)

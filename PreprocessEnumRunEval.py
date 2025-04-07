@@ -108,7 +108,7 @@ def running_times_in_dict(path: str, **kwargs) -> dict:
     return_dict["Preprocess Runtime"] = preprocess_runtime
     return_dict["Number of Minimal Hitting Sets"] = len(Y)
     return_dict["Delays"] = Y
-    return_dict["Average delay"] = round(sum(Y)/len(Y), 8)
+    return_dict["Average delay"] = round(Y[-1]/len(Y), 8)
     return return_dict
 
 if __name__ == '__main__':

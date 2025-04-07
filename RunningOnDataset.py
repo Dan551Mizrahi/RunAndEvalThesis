@@ -57,7 +57,7 @@ def timeout_memoryout_recursion_handler(what_happened: str, file_path: str):
         "Avg Hyperedge Size": sum(hyperedges_size) / len(hyperedges_size),
         "Size of Hypergraph": num_vertices + sum(hyperedges_size),
         "Number of Connected Components": num_connected_components})
-    if not what_happened != "Recursion":
+    if what_happened != "Recursion":
         td = RootedDisjointBranchNiceTreeDecomposition(hypergraph)
         # Root measures
         dict_of_join_nodes = count_join_nodes(td)
@@ -95,7 +95,7 @@ def timeout_memoryout_recursion_handler(what_happened: str, file_path: str):
 def help_pool_server(file_path: str, memory_limit = True):
 
     if memory_limit:
-        memory_limit_p(0.1)
+        memory_limit_p(0.02)
     try:
         parent_path = os.path.dirname(file_path)
         file_name = os.path.basename(file_path)
@@ -122,7 +122,7 @@ def help_pool_server(file_path: str, memory_limit = True):
     except MemoryError:
         # Handle memory error
         timeout_memoryout_recursion_handler("Memory", file_path)
-        print(f"Process {file_path}_id.txt Memory!")
+        print(f"Process {file_path} Memory!")
     except RecursionError:
         # Handle recursion error
         timeout_memoryout_recursion_handler("Recursion", file_path)
@@ -151,15 +151,15 @@ def writing_of_an_entire_folder_server(folder_path: str, multiprocessing: bool =
                 except TimeoutError:
                     # Handle timeout
                     timeout_memoryout_recursion_handler("Timeout", file_path)
-                    print(f"Process {file_path} timed out!")
+                    print(f"Process {file_path} timed out! Here!")
                 except MemoryError:
                     # Handle memory error
                     timeout_memoryout_recursion_handler("Memory", file_path)
-                    print(f"Process {file_path}_id.txt Memory!")
+                    print(f"Process {file_path} Memory! Here!")
                 except RecursionError:
                     # Handle recursion error
                     timeout_memoryout_recursion_handler("Recursion", file_path)
-                    print(f"Process {file_path} Recursion!")
+                    print(f"Process {file_path} Recursion! Here!")
     else:
         pass
 
