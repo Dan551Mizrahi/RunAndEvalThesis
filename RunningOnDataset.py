@@ -105,13 +105,11 @@ def timeout_memoryout_recursion_handler(what_happened: str, file_path: str):
 
 
 def help_pool_server(file_path: str, memory_limit = True):
-    wandb.init(project="debug2", name=f"{file_path.split('/')[-1]}", reinit=True,)
 
     if memory_limit:
         memory_limit_p(0.15)
     try:
         parent_path = os.path.dirname(file_path)
-        wandb.log({"File": "a"})
         file_name = os.path.basename(file_path)
         data_folder = os.path.join(parent_path, "data")
         data_file_path = os.path.join(data_folder, file_name.split('.')[0] + "_data.json")
@@ -144,8 +142,8 @@ def help_pool_server(file_path: str, memory_limit = True):
 
 
 def writing_of_an_entire_folder_server(folder_path: str, multiprocessing: bool = True):
-    list1 = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if
-             file.endswith(".dat") or file.endswith(".graph")]
+    list1 = sorted([os.path.join(folder_path, file) for file in os.listdir(folder_path) if
+             file.endswith(".dat") or file.endswith(".graph")])
     data_folder = os.path.join(folder_path, "data")
     os.makedirs(data_folder, exist_ok=True)
     if multiprocessing:
@@ -169,7 +167,6 @@ if __name__ == "__main__":
     parser.add_argument("folder_path", type=str, help="Path to the folder containing the files.")
     parser.add_argument("-d", "--folder_of_datasets", action="store_true", help="")
     args = parser.parse_args()
-    import wandb
     if args.folder_of_datasets:
         all_dirs = sorted(os.listdir(args.folder_path))
         for dir1 in all_dirs:
