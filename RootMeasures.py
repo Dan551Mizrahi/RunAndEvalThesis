@@ -24,3 +24,13 @@ def count_branching(tree_decomposition: RootedDisjointBranchNiceTreeDecompositio
             help_dict[vertex[0]].add(tree_decomposition.nodes[node]['br'])
 
     return {vertex: len(help_dict[vertex]) for vertex in help_dict}
+
+def width(tree_decomposition: RootedDisjointBranchNiceTreeDecomposition) -> int:
+    """Returns the width of a rooted (disjoint) nice tree decomposition.
+    :param (Disjoint Nice) tree_decomposition: RootedDisjointBranchNiceTreeDecomposition
+    :return: int
+    """
+    max_width = 0
+    for node in tree_decomposition.nodes:
+        max_width = max(max_width, len(tree_decomposition.nodes[node]['bag']))
+    return max_width - 1

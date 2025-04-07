@@ -20,81 +20,108 @@ def timeout_memoryout_recursion_handler(what_happened: str, file_path: str):
     data_folder = os.path.join(parent_path, "data")
     data_file_path = os.path.join(data_folder, file_name.split('.')[0] + "_data.json")
 
-    try:
-        with open(data_file_path, 'r') as f:
-            existing_data = json.load(f)
-    except FileNotFoundError:
-        existing_data = {}
-    except json.JSONDecodeError:
-        existing_data = {}
-
-    hypergraph = read_hypergraph(file_path)
-
-    no_reduction_graph = hypergraph.copy()
-    no_reduction_graph.remove_node(MAX_CHR)
-
-    # Number of lines in the file is the number of the hyperedges
-    with open(file_path, 'r') as f:
-        hyperedges_size = []
-        num_hyperedges = 0
-        for line in f:
-            if line.strip():
-                hyperedges_size.append(len(line.split()))
-                # Increase the number of hyperedges
-                num_hyperedges += 1
-
-    num_vertices = len(no_reduction_graph.nodes) - num_hyperedges
-
-    # Get the number of connected components
-    num_connected_components = nx.number_connected_components(no_reduction_graph)
-
-    existing_data.update({
-        "Num of Vertices": num_vertices,
-        "Num of Hyperedges": num_hyperedges,
-        "n + m": num_vertices + num_hyperedges,
-        "Max Hyperedge Size": max(hyperedges_size),
-        "Min Hyperedge Size": min(hyperedges_size),
-        "Avg Hyperedge Size": sum(hyperedges_size) / len(hyperedges_size),
-        "Size of Hypergraph": num_vertices + sum(hyperedges_size),
-        "Number of Connected Components": num_connected_components})
-    if what_happened != "Recursion":
+    if what_happened == "Memory":
+        existing_data = {"Num of Vertices": what_happened,
+        "Num of Hyperedges": what_happened,
+        "n + m": what_happened,
+        "Max Hyperedge Size": what_happened,
+        "Min Hyperedge Size": what_happened,
+        "Avg Hyperedge Size": what_happened,
+        "Size of Hypergraph": what_happened,
+        "Number of Connected Components": what_happened,
+        'Diameter': what_happened,
+        'Sparsity': what_happened,
+         "Treewidth": what_happened,
+         "(m + n) * tw": what_happened,
+         "Number of Join Nodes": what_happened,
+         "Size of Join Nodes": what_happened,
+         "Special Join Measure": what_happened,
+         "Max Join Node Size": what_happened,
+         "Min Join Node Size": what_happened,
+         "Number of Branching": what_happened,
+         "Max Branching": what_happened,
+         "Real Effective Width": what_happened
+        }
+    else:
         try:
+            with open(data_file_path, 'r') as f:
+                existing_data = json.load(f)
+        except FileNotFoundError:
+            existing_data = {}
+        except json.JSONDecodeError:
+            existing_data = {}
+
+        hypergraph = read_hypergraph(file_path)
+
+        no_reduction_graph = hypergraph.copy()
+        no_reduction_graph.remove_node(MAX_CHR)
+
+        # Number of lines in the file is the number of the hyperedges
+        with open(file_path, 'r') as f:
+            hyperedges_size = []
+            num_hyperedges = 0
+            for line in f:
+                if line.strip():
+                    hyperedges_size.append(len(line.split()))
+                    # Increase the number of hyperedges
+                    num_hyperedges += 1
+
+        num_vertices = len(no_reduction_graph.nodes) - num_hyperedges
+
+        # Get the number of connected components
+        num_connected_components = nx.number_connected_components(no_reduction_graph)
+
+        existing_data.update({
+            "Num of Vertices": num_vertices,
+            "Num of Hyperedges": num_hyperedges,
+            "n + m": num_vertices + num_hyperedges,
+            "Max Hyperedge Size": max(hyperedges_size),
+            "Min Hyperedge Size": min(hyperedges_size),
+            "Avg Hyperedge Size": sum(hyperedges_size) / len(hyperedges_size),
+            "Size of Hypergraph": num_vertices + sum(hyperedges_size),
+            "Number of Connected Components": num_connected_components,
+            'Diameter': nx.diameter(hypergraph),
+            'Sparsity': round(nx.density(no_reduction_graph), 4),
+        })
+        if what_happened == "Timeout":
             td = RootedDisjointBranchNiceTreeDecomposition(hypergraph)
             # Root measures
             dict_of_join_nodes = count_join_nodes(td)
             number_of_join_nodes = len(dict_of_join_nodes)
             size_of_join_nodes = sum(dict_of_join_nodes.values())
             special_join_measure = sum({5 ** l for l in dict_of_join_nodes.values()})
-            real_effective_width = max(dict_of_join_nodes.values()) - 1
+            real_effective_width = width(td)
             dict_of_branches = count_branching(td)
             number_of_branching = sum(dict_of_branches.values())
             max_branching = max(dict_of_branches.values())
-            existing_data.update({"Treewidth": td.width,
-                "Number of Join Nodes": number_of_join_nodes,
-                "Size of Join Nodes": size_of_join_nodes,
-                "Special Join Measure": special_join_measure,
-                "Number of Branching": number_of_branching,
-                "Max Branching": max_branching,
-                "Real Effective Width": real_effective_width})
-        except MemoryError:
-            # Handle memory error
-            print(f"Process {file_path} Tree Decomposition Memory!")
-            what_happened = "Total Memory"
+            if len(dict_of_join_nodes) > 0:
+                max_join_node_size = max(dict_of_join_nodes.values())
+                min_join_node_size = min(dict_of_join_nodes.values())
+            else:
+                max_join_node_size = 0
+                min_join_node_size = 0
+            existing_data.update({
+            "Treewidth": td.width,
+            "(m + n) * tw": (num_vertices + num_hyperedges) * td.width,
+            "Number of Join Nodes": number_of_join_nodes,
+            "Size of Join Nodes": size_of_join_nodes,
+            "Special Join Measure": special_join_measure,
+            "Max Join Node Size": max_join_node_size,
+            "Min Join Node Size": min_join_node_size,
+            "Number of Branching": number_of_branching,
+            "Max Branching": max_branching,
+            "Real Effective Width": real_effective_width})
+        else:
             existing_data.update({"Treewidth": what_happened,
+                "(m + n) * tw": what_happened,
                 "Number of Join Nodes": what_happened,
                 "Size of Join Nodes": what_happened,
                 "Special Join Measure": what_happened,
+                "Max Join Node Size": what_happened,
+                "Min Join Node Size": what_happened,
                 "Number of Branching": what_happened,
                 "Max Branching": what_happened,
                 "Real Effective Width": what_happened})
-    else:
-        existing_data.update({"Treewidth": what_happened,
-            "Number of Join Nodes": what_happened,
-            "Size of Join Nodes": what_happened,
-            "Special Join Measure": what_happened,
-            "Number of Branching": what_happened,
-            "Max Branching": what_happened,
-            "Real Effective Width": what_happened})
 
     existing_data["Preprocessing Runtime"] = what_happened
     existing_data["Number of Minimal Hitting Sets"] = what_happened
@@ -147,7 +174,7 @@ def writing_of_an_entire_folder_server(folder_path: str, multiprocessing: bool =
     data_folder = os.path.join(folder_path, "data")
     os.makedirs(data_folder, exist_ok=True)
     if multiprocessing:
-        with ProcessPool(6, max_tasks=2) as pool:
+        with ProcessPool(6, max_tasks=1) as pool:
             # Create a data folder
 
             futures = []

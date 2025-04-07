@@ -39,9 +39,12 @@ def Hypergraph_features(file_path: str, td: RootedDisjointBranchNiceTreeDecompos
     size_of_join_nodes = sum(dict_of_join_nodes.values())
     special_join_measure = sum({5 ** l for l in dict_of_join_nodes.values()})
     if len(dict_of_join_nodes) > 0:
-        real_effective_width = max(dict_of_join_nodes.values()) - 1
+        max_join_node_size = max(dict_of_join_nodes.values())
+        min_join_node_size = min(dict_of_join_nodes.values())
     else:
-        real_effective_width = 0
+        max_join_node_size = 0
+        min_join_node_size = 0
+    real_effective_width = width(td)
     dict_of_branches = count_branching(td)
     number_of_branching = sum(dict_of_branches.values())
     max_branching = max(dict_of_branches.values())
@@ -62,6 +65,8 @@ def Hypergraph_features(file_path: str, td: RootedDisjointBranchNiceTreeDecompos
         "Number of Join Nodes": number_of_join_nodes,
         "Size of Join Nodes": size_of_join_nodes,
         "Special Join Measure": special_join_measure,
+        "Max Join Node Size": max_join_node_size,
+        "Min Join Node Size": min_join_node_size,
         "Number of Branching": number_of_branching,
         "Max Branching": max_branching,
         "Real Effective Width": real_effective_width
@@ -108,7 +113,10 @@ def running_times_in_dict(path: str, **kwargs) -> dict:
     return_dict["Preprocess Runtime"] = preprocess_runtime
     return_dict["Number of Minimal Hitting Sets"] = len(Y)
     return_dict["Delays"] = Y
-    return_dict["Average delay"] = round(Y[-1]/len(Y), 8)
+    if len(Y) > 0:
+        return_dict["Average delay"] = round(Y[-1]/len(Y), 8)
+    else:
+        return_dict["Average delay"] = 0
     return return_dict
 
 if __name__ == '__main__':
