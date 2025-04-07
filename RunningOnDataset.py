@@ -15,7 +15,7 @@ import argparse
 sys.setrecursionlimit(1700)
 
 def timeout_memoryout_recursion_handler(what_happened: str, file_path: str):
-    parent_path = os.path.dirname(os.path.dirname(file_path))
+    parent_path = os.path.dirname(file_path)
     file_name = os.path.basename(file_path)
     data_folder = os.path.join(parent_path, "data")
     data_file_path = os.path.join(data_folder, file_name.split('.')[0] + "_data.json")
@@ -58,23 +58,35 @@ def timeout_memoryout_recursion_handler(what_happened: str, file_path: str):
         "Size of Hypergraph": num_vertices + sum(hyperedges_size),
         "Number of Connected Components": num_connected_components})
     if what_happened != "Recursion":
-        td = RootedDisjointBranchNiceTreeDecomposition(hypergraph)
-        # Root measures
-        dict_of_join_nodes = count_join_nodes(td)
-        number_of_join_nodes = len(dict_of_join_nodes)
-        size_of_join_nodes = sum(dict_of_join_nodes.values())
-        special_join_measure = sum({5 ** l for l in dict_of_join_nodes.values()})
-        real_effective_width = max(dict_of_join_nodes.values()) - 1
-        dict_of_branches = count_branching(td)
-        number_of_branching = sum(dict_of_branches.values())
-        max_branching = max(dict_of_branches.values())
-        existing_data.update({"Treewidth": td.width,
-            "Number of Join Nodes": number_of_join_nodes,
-            "Size of Join Nodes": size_of_join_nodes,
-            "Special Join Measure": special_join_measure,
-            "Number of Branching": number_of_branching,
-            "Max Branching": max_branching,
-            "Real Effective Width": real_effective_width})
+        try:
+            td = RootedDisjointBranchNiceTreeDecomposition(hypergraph)
+            # Root measures
+            dict_of_join_nodes = count_join_nodes(td)
+            number_of_join_nodes = len(dict_of_join_nodes)
+            size_of_join_nodes = sum(dict_of_join_nodes.values())
+            special_join_measure = sum({5 ** l for l in dict_of_join_nodes.values()})
+            real_effective_width = max(dict_of_join_nodes.values()) - 1
+            dict_of_branches = count_branching(td)
+            number_of_branching = sum(dict_of_branches.values())
+            max_branching = max(dict_of_branches.values())
+            existing_data.update({"Treewidth": td.width,
+                "Number of Join Nodes": number_of_join_nodes,
+                "Size of Join Nodes": size_of_join_nodes,
+                "Special Join Measure": special_join_measure,
+                "Number of Branching": number_of_branching,
+                "Max Branching": max_branching,
+                "Real Effective Width": real_effective_width})
+        except MemoryError:
+            # Handle memory error
+            print(f"Process {file_path} Tree Decomposition Memory!")
+            what_happened = "Total Memory"
+            existing_data.update({"Treewidth": what_happened,
+                "Number of Join Nodes": what_happened,
+                "Size of Join Nodes": what_happened,
+                "Special Join Measure": what_happened,
+                "Number of Branching": what_happened,
+                "Max Branching": what_happened,
+                "Real Effective Width": what_happened})
     else:
         existing_data.update({"Treewidth": what_happened,
             "Number of Join Nodes": what_happened,
@@ -93,10 +105,10 @@ def timeout_memoryout_recursion_handler(what_happened: str, file_path: str):
 
 
 def help_pool_server(file_path: str, memory_limit = True):
-    wandb.init(project="debug", name=f"{file_path.split('/')[-1]}", reinit=True,)
+    wandb.init(project="debug2", name=f"{file_path.split('/')[-1]}", reinit=True,)
 
     if memory_limit:
-        memory_limit_p(0.02)
+        memory_limit_p(0.15)
     try:
         parent_path = os.path.dirname(file_path)
         wandb.log({"File": "a"})
@@ -137,7 +149,7 @@ def writing_of_an_entire_folder_server(folder_path: str, multiprocessing: bool =
     data_folder = os.path.join(folder_path, "data")
     os.makedirs(data_folder, exist_ok=True)
     if multiprocessing:
-        with ProcessPool(9, max_tasks=2) as pool:
+        with ProcessPool(6, max_tasks=2) as pool:
             # Create a data folder
 
             futures = []
@@ -148,20 +160,7 @@ def writing_of_an_entire_folder_server(folder_path: str, multiprocessing: bool =
 
             for i, future in tqdm(futures):
                 file_path = list1[i]
-                try:
-                    result = future.result()
-                except TimeoutError:
-                    # Handle timeout
-                    timeout_memoryout_recursion_handler("Timeout", file_path)
-                    print(f"Process {file_path} timed out! Here!")
-                except MemoryError:
-                    # Handle memory error
-                    timeout_memoryout_recursion_handler("Memory", file_path)
-                    print(f"Process {file_path} Memory! Here!")
-                except RecursionError:
-                    # Handle recursion error
-                    timeout_memoryout_recursion_handler("Recursion", file_path)
-                    print(f"Process {file_path} Recursion! Here!")
+                result = future.result()
     else:
         pass
 
