@@ -93,6 +93,7 @@ def timeout_memoryout_recursion_handler(what_happened: str, file_path: str):
 
 
 def help_pool_server(file_path: str, memory_limit = True):
+    wandb.init(project="debug", name=f"{file_path.split('/')[-1]}", reinit=True,)
 
     if memory_limit:
         memory_limit_p(0.02)
@@ -168,6 +169,7 @@ if __name__ == "__main__":
     parser.add_argument("folder_path", type=str, help="Path to the folder containing the files.")
     parser.add_argument("-d", "--folder_of_datasets", action="store_true", help="")
     args = parser.parse_args()
+    import wandb
     if args.folder_of_datasets:
         all_dirs = sorted(os.listdir(args.folder_path))
         for dir1 in all_dirs:
