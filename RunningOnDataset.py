@@ -99,6 +99,7 @@ def help_pool_server(file_path: str, memory_limit = True):
         memory_limit_p(0.02)
     try:
         parent_path = os.path.dirname(file_path)
+        wandb.log({"File": "a"})
         file_name = os.path.basename(file_path)
         data_folder = os.path.join(parent_path, "data")
         data_file_path = os.path.join(data_folder, file_name.split('.')[0] + "_data.json")
@@ -122,8 +123,8 @@ def help_pool_server(file_path: str, memory_limit = True):
         print(f"Process {file_path} timed out!")
     except MemoryError:
         # Handle memory error
-        timeout_memoryout_recursion_handler("Memory", file_path)
         print(f"Process {file_path} Memory!")
+        timeout_memoryout_recursion_handler("Memory", file_path)
     except RecursionError:
         # Handle recursion error
         timeout_memoryout_recursion_handler("Recursion", file_path)
