@@ -149,7 +149,7 @@ def help_pool_server(file_path: str, memory_limit = True):
         except json.JSONDecodeError:
             existing_data = {}
 
-        if "Preprocessing Runtime" not in existing_data.keys():
+        if "Preprocess Runtime" not in existing_data.keys():
             existing_data.update(running_times_in_dict(file_path))
 
         # Write the updated dictionary to the file

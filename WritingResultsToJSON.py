@@ -20,7 +20,7 @@ def save_dict_to_json(data, file_path):
             json.dump(data, f, indent=4, default=lambda x: str(x))
         return True
     except Exception as e:
-        print(f"Error saving dictionary to JSON: {e}")
+        print(f"Error saving dictionary to JSON: {e}, File Path: {file_path}")
         return False
 
 if __name__ == "__main__":
