@@ -170,12 +170,11 @@ def help_pool_server(file_path: str, memory_limit = True):
 
 def writing_of_an_entire_folder_server(folder_path: str, multiprocessing: bool = True):
     list1 = sorted([os.path.join(folder_path, file) for file in os.listdir(folder_path) if
-             file.endswith(".dat") or file.endswith(".graph")])
+             file.endswith(".dat") or file.endswith(".graph")])[:100]
     data_folder = os.path.join(folder_path, "data")
     os.makedirs(data_folder, exist_ok=True)
     if multiprocessing:
         with ProcessPool(6, max_tasks=1) as pool:
-            # Create a data folder
 
             futures = []
 
