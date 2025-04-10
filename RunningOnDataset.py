@@ -141,6 +141,9 @@ def help_pool_server(file_path: str, memory_limit = True):
         data_folder = os.path.join(parent_path, "data")
         data_file_path = os.path.join(data_folder, file_name.split('.')[0] + "_data.json")
 
+        if os.path.exists(data_file_path):
+            return
+
         try:
             with open(data_file_path, 'r') as f:
                 existing_data = json.load(f)
