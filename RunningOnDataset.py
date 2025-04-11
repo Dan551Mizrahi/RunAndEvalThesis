@@ -11,6 +11,7 @@ import networkx as nx
 import json
 import sys
 import argparse
+import concurrent.futures
 
 sys.setrecursionlimit(1700)
 
@@ -157,7 +158,7 @@ def help_pool_server(file_path: str, memory_limit = True):
 
         # Write the updated dictionary to the file
         save_dict_to_json(existing_data, data_file_path)
-    except TimeoutError:
+    except concurrent.futures.TimeoutError:
         # Handle timeout
         timeout_memoryout_recursion_handler("Timeout", file_path)
         print(f"Process {file_path} timed out!")

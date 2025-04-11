@@ -2,18 +2,20 @@ import random
 from math import floor
 import matplotlib.pyplot as plt
 from random import sample
+from sklearn.linear_model import LinearRegression
 import numpy as np
 import os
-from readJSONtoDict import read_json_to_dict
+from readJSONtoDict import read_json_to_dict, read_whole_folders_data, read_folder_of_folders_to_one_list
 import argparse
+from FilterData import filter_by_tw
 
-colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k']
-
-def create_data_scatter_plot(X, Y, x_name, y_name, X_avg=None, Y_avg=None, split_name=False, split_values=None, title=None, saving_title=None, p=None):
+def create_data_scatter_plot(X, Y, x_name, y_name, X_avg=None, Y_avg=None, split_name=False, split_values=None, title=None, saving_title=None, p=None, no_title=True):
 
     # Create the plot
     plt.figure(figsize=(8, 6))
-    if title:
+    if no_title:
+        pass
+    elif title:
         plt.title(title, fontsize=14)
     else:
         plt.title(f'{y_name} against {x_name}', fontsize=14)
@@ -23,9 +25,8 @@ def create_data_scatter_plot(X, Y, x_name, y_name, X_avg=None, Y_avg=None, split
         for i, X_i in enumerate(X):
             Y_i = Y[i]
             split_value = split_values[i]
-            color = colors[i]
             # Plot the data points with a colored line and markers add label for legend
-            plt.scatter(X_i, Y_i, color=color, marker='o', label=f'{split_name}={split_value}')
+            plt.scatter(X_i, Y_i, marker='o', label=f'{split_name}={split_value}')
         # Add legend
         plt.legend()
     else:
@@ -59,14 +60,16 @@ def create_data_scatter_plot(X, Y, x_name, y_name, X_avg=None, Y_avg=None, split
         # Save the plot as a PDF for LaTeX inclusion
         plt.savefig(f'figure_{y_name}_{x_name}.pdf')
 
-def create_data_plot(X, Y, x_name, y_name, X_avg=None, Y_avg=None, split_name=False, split_values=None, scatter = False, title=None, saving_title=None, p=None):
+def create_data_plot(X, Y, x_name, y_name, X_avg=None, Y_avg=None, split_name=False, split_values=None, scatter = False, title=None, saving_title=None, p=None, no_title=True):
 
     if scatter:
-        return create_data_scatter_plot(X, Y, x_name, y_name, split_name=split_name, split_values=split_values, title=title, saving_title=saving_title, p=p, X_avg=X_avg, Y_avg=Y_avg)
+        return create_data_scatter_plot(X, Y, x_name, y_name, split_name=split_name, split_values=split_values, title=title, saving_title=saving_title, p=p, X_avg=X_avg, Y_avg=Y_avg, no_title=no_title)
 
     # Create the plot
     plt.figure(figsize=(8, 6))
-    if title:
+    if no_title:
+        pass
+    elif title:
         plt.title(title, fontsize=14)
     else:
         plt.title(f'{y_name} against {x_name}', fontsize=14)
@@ -85,13 +88,12 @@ def create_data_plot(X, Y, x_name, y_name, X_avg=None, Y_avg=None, split_name=Fa
             split_value = split_values[i]
             # Sort the data points by X
             X_i, Y_i = zip(*sorted(zip(X_i, Y_i)))
-            color = colors[i]
             # Plot the data points with a colored line and markers add label for legend
             if X_avg:
                 alp = 0.5
             else:
                 alp = 1.0
-            plt.plot(X_i, Y_i, color + '-', marker='o', linewidth=2, label=f'{split_name}={split_value}', alpha=alp)
+            plt.plot(X_i, Y_i, marker='o', linewidth=2, label=f'{split_name}={split_value}', alpha=alp)
             # Add legend
         plt.legend()
 
@@ -312,22 +314,16 @@ def process_and_plot_data_preprocessing(data):
 def process_and_plot_data_enum(data):
     filtered_data = []
     for d in data:
-        if 5 <= d.get("Treewidth", 0) <= 11:
-            filtered_data.append(d)
+        filtered_data.append(d)
 
     grouped_data = {}
     for d in filtered_data:
         treewidth = d.get("Treewidth")
-        if treewidth is not None and treewidth > 0:
-            if treewidth not in grouped_data:
-                grouped_data[treewidth] = []
-            if d["Preprocess Runtime"] > 0:
-                grouped_data[treewidth].append((d["Delays"], d["(m + n) * tw"]))
+        grouped_data[treewidth] = []
+        grouped_data[treewidth].append((d["Delays"], d["(m + n) * tw"]))
 
     i = 0
     while i<100000:
-        if i == 99999:
-            print("Could not find a good ordering")
         X_avg = []
         Y_30 = []
         Y_100 = []
@@ -338,17 +334,18 @@ def process_and_plot_data_enum(data):
             Y_30.append(y[:30])
             Y_100.append(y[:100])
 
-        Y_avg_30 = [sum(y) / len(y) for y in Y_30]
-        Y_avg_100 = [sum(y) / len(y) for y in Y_100]
+        Y_avg_30 = [y[-1]/30 for y in Y_30]
+        Y_avg_100 = [y[-1]/100 for y in Y_100]
 
         if Y_avg_30 == sorted(Y_avg_30):
             break
 
         i+=1
+    if i == 100000:
+        print("Could not find a good ordering")
 
-
-    Y_30 = [[0]+[sum(y1[:i]) for i in range(len(y1))] for y1 in Y_30]
-    Y_100 = [[0] + [sum(y1[:i]) for i in range(len(y1))] for y1 in Y_100]
+    Y_30 = [[0]+y1 for y1 in Y_30]
+    Y_100 = [[0]+y1 for y1 in Y_100]
 
     X_30 = [list(range(0, len(y)+1)) for y in Y_30]
     create_data_plot(X_30, Y_30, 'The i-th minimal hitting set', 'The cumulative delay (seconds)',
@@ -412,38 +409,39 @@ def process_and_plot_data_enum(data):
 def process_and_plot_data_enum_scatter(data):
     filtered_data = []
     for d in data:
-        if 4 <= d.get("Treewidth", 0) <= 10:
-            filtered_data.append(d)
+        filtered_data.append(d)
 
     X = []
     Y = []
+    treewidths = set()
     for dict1 in filtered_data:
+        treewidths.add(dict1['Treewidth'])
         X.append(dict1["(m + n) * tw"])
-        Y.append(dict1["Delays"][-1]/len(dict1["Delays"]))
+        Y.append(dict1["Average delay"])
 
     create_data_plot(X, Y, r'$(m + n) \cdot TW$', 'The average delay (seconds)',
                         title=r'Average delay of the enumeration',
                         saving_title="figure_Enum_scatter1.pdf",
                         scatter=True)
     # The same, but divided by treewidth
-    X = [[] for _ in range(4, 11)]
-    Y = [[] for _ in range(4, 11)]
+    X = [[] for _ in range(len(treewidths))]
+    Y = [[] for _ in range(len(treewidths))]
+    min_treewidth = min(treewidths)
     for dict1 in filtered_data:
-        print(dict1["Treewidth"])
-        X[int(dict1["Treewidth"]) - 4].append(dict1["(m + n) * tw"])
-        Y[int(dict1["Treewidth"]) - 4].append(dict1["Delays"][-1] / len(dict1["Delays"]))
+        X[int(dict1["Treewidth"]) - min_treewidth].append(dict1["(m + n) * tw"])
+        Y[int(dict1["Treewidth"]) - min_treewidth].append(dict1["Average delay"])
 
     create_data_plot(X, Y, r'$(m + n) \cdot TW$', 'The average delay (seconds)',
                      title=r'Average delay of the enumeration',
                      saving_title="figure_Enum_scatter2.pdf",
-                     split_name="Treewidth", split_values=range(4, 11),
+                     split_name="Treewidth", split_values=sorted(treewidths),
                      scatter=True)
 
     X = []
     Y = []
     for dict1 in filtered_data:
-        X.append(dict1["(m+n)*w"])
-        Y.append(sum(eval(dict1["delays"])) / len(eval(dict1["delays"])))
+        X.append(dict1["(m + n) * tw"])
+        Y.append(dict1["Average delay"])
 
     z = np.polyfit(X, Y, 1)
     p = np.poly1d(z)
@@ -504,8 +502,6 @@ def two_properties_graph(data, x_property, y_property, scatter=False, trend_line
 
     for d in data:
         if x_property in d and y_property in d:
-            if d[x_property] >16:
-                continue
             X.append(d[x_property])
             Y.append(d[y_property])
     if scatter and trend_line:
@@ -528,14 +524,19 @@ def two_properties_graph(data, x_property, y_property, scatter=False, trend_line
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process and plot data from JSON files.')
-    parser.add_argument('--path_to_data', type=str, default="/Users/dan/Desktop/data2")
+    parser.add_argument('--path_to_data', type=str, default="/Users/dan/Desktop/FinalGeneratedData")
     args = parser.parse_args()
     path_to_data = args.path_to_data
-    total_list = []
-    for f in os.listdir(path_to_data):
-        if f.endswith(".json"):
-            total_list.append(read_json_to_dict(os.path.join(path_to_data, f)))
+    total_list = read_folder_of_folders_to_one_list(path_to_data)
+
+    # total_list = filter_by_tw(total_list, 10)
+    # two_properties_graph(total_list, "Size of Hypergraph", "Preprocess Runtime", scatter=True, trend_line=False)
+
     # plot_enum_delays(total_list)
-    # two_properties_graph(total_list, "Real Effective Width","Preprocess Runtime", scatter=True, trend_line=True)
-    process_and_plot_data_enum(total_list)
-    process_and_plot_data_enum_scatter(total_list)
+
+    # two_properties_graph(total_list, "Treewidth","Preprocess Runtime", scatter=True, trend_line=False)
+
+    # process_and_plot_data_enum(total_list)
+    # process_and_plot_data_enum_scatter(total_list)
+    two_properties_graph(total_list, "Number of Minimal Hitting Sets","Average delay", scatter=True, trend_line=False)
+    two_properties_graph(total_list, "Number of Minimal Hitting Sets", "Preprocess Runtime", scatter=True, trend_line=False)
