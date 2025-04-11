@@ -158,18 +158,15 @@ def help_pool_server(file_path: str, memory_limit = True):
 
         # Write the updated dictionary to the file
         save_dict_to_json(existing_data, data_file_path)
-    except concurrent.futures.TimeoutError:
-        # Handle timeout
-        timeout_memoryout_recursion_handler("Timeout", file_path)
-        print(f"Process {file_path} timed out!")
     except MemoryError:
         # Handle memory error
         print(f"Process {file_path} Memory!")
         timeout_memoryout_recursion_handler("Memory", file_path)
     except RecursionError:
         # Handle recursion error
-        timeout_memoryout_recursion_handler("Recursion", file_path)
         print(f"Process {file_path} Recursion!")
+        timeout_memoryout_recursion_handler("Recursion", file_path)
+
 
 
 def writing_of_an_entire_folder_server(folder_path: str, multiprocessing: bool = True):
@@ -183,12 +180,17 @@ def writing_of_an_entire_folder_server(folder_path: str, multiprocessing: bool =
             futures = []
 
             for i, file_path in enumerate(list1):  # Use enumerate to get indices
-                future = pool.schedule(help_pool_server, args=[file_path], timeout=6000)
+                future = pool.schedule(help_pool_server, args=[file_path], timeout=60)
                 futures.append((i, future))  # Store index with future
 
             for i, future in tqdm(futures):
                 file_path = list1[i]
-                result = future.result()
+                try:
+                    result = future.result()
+                except concurrent.futures.TimeoutError:
+                    # Handle timeout
+                    print(f"Process {file_path} timed out!")
+                    timeout_memoryout_recursion_handler("Timeout", file_path)
     else:
         pass
 
