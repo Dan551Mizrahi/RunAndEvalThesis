@@ -180,7 +180,7 @@ def writing_of_an_entire_folder_server(folder_path: str, multiprocessing: bool =
             futures = []
 
             for i, file_path in enumerate(list1):  # Use enumerate to get indices
-                future = pool.schedule(help_pool_server, args=[file_path], timeout=60)
+                future = pool.schedule(help_pool_server, args=[file_path], timeout=6000)
                 futures.append((i, future))  # Store index with future
 
             for i, future in tqdm(futures):
