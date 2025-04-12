@@ -124,7 +124,7 @@ def timeout_memoryout_recursion_handler(what_happened: str, file_path: str):
                 "Max Branching": what_happened,
                 "Real Effective Width": what_happened})
 
-    existing_data["Preprocessing Runtime"] = what_happened
+    existing_data["Preprocess Runtime"] = what_happened
     existing_data["Number of Minimal Hitting Sets"] = what_happened
     existing_data["Delays"] = what_happened
     existing_data["Average delay"] = what_happened
@@ -153,7 +153,7 @@ def help_pool_server(file_path: str, memory_limit = True):
         except json.JSONDecodeError:
             existing_data = {}
 
-        if "Preprocess Runtime" not in existing_data.keys():
+        if "Delays" not in existing_data.keys():
             existing_data.update(running_times_in_dict(file_path))
 
         # Write the updated dictionary to the file
