@@ -73,7 +73,7 @@ def Hypergraph_features(file_path: str, td: RootedDisjointBranchNiceTreeDecompos
     }
 
 
-def running_times_plus_features(path: str, first_k = None, iterative = True):
+def running_times_plus_features(path: str, first_k = None, iterative = True, print_flag = True) -> tuple:
 
     hypergraph = read_hypergraph(path)
 
@@ -94,6 +94,9 @@ def running_times_plus_features(path: str, first_k = None, iterative = True):
     second_time = time.time()
     preprocess_runtime = second_time - first_time
 
+    if print_flag:
+        print("Done preprocessing: ", path)
+
     # enumeration phase
     i = 0
     first_time = time.time()
@@ -103,6 +106,8 @@ def running_times_plus_features(path: str, first_k = None, iterative = True):
         next_time = time.time()
         Y.append(next_time - first_time)
         i +=1
+
+    print("Done enumeration: ", path)
 
     return preprocess_runtime, Y, features_dict
 

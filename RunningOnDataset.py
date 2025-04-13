@@ -13,7 +13,7 @@ import sys
 import argparse
 import concurrent.futures
 
-sys.setrecursionlimit(1700)
+sys.setrecursionlimit(2000)
 
 def timeout_memoryout_recursion_handler(what_happened: str, file_path: str):
     parent_path = os.path.dirname(file_path)
@@ -135,8 +135,9 @@ def timeout_memoryout_recursion_handler(what_happened: str, file_path: str):
 def help_pool_server(file_path: str, memory_limit = True):
 
     if memory_limit:
-        memory_limit_p(0.15)
+        memory_limit_p(0.45)
     try:
+        print("working on file: ", file_path)
         parent_path = os.path.dirname(file_path)
         file_name = os.path.basename(file_path)
         data_folder = os.path.join(parent_path, "data")
@@ -175,7 +176,7 @@ def writing_of_an_entire_folder_server(folder_path: str, multiprocessing: bool =
     data_folder = os.path.join(folder_path, "data")
     os.makedirs(data_folder, exist_ok=True)
     if multiprocessing:
-        with ProcessPool(6, max_tasks=1) as pool:
+        with ProcessPool(2, max_tasks=1) as pool:
 
             futures = []
 
