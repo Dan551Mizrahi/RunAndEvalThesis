@@ -529,14 +529,14 @@ if __name__ == "__main__":
     path_to_data = args.path_to_data
     total_list = read_folder_of_folders_to_one_list(path_to_data)
 
-    # total_list = filter_by_tw(total_list, 10)
-    # two_properties_graph(total_list, "Size of Hypergraph", "Preprocess Runtime", scatter=True, trend_line=False)
+    total_list = filter_by_tw(total_list, 11)
+    two_properties_graph(total_list, "n + m", "Preprocess Runtime", scatter=True, trend_line=True)
 
     # plot_enum_delays(total_list)
 
     # two_properties_graph(total_list, "Treewidth","Preprocess Runtime", scatter=True, trend_line=False)
-
+    # two_properties_graph(total_list, "Treewidth", "Preprocess Runtime", scatter=True, trend_line=True)
     # process_and_plot_data_enum(total_list)
     # process_and_plot_data_enum_scatter(total_list)
-    two_properties_graph(total_list, "Number of Minimal Hitting Sets","Average delay", scatter=True, trend_line=False)
-    two_properties_graph(total_list, "Number of Minimal Hitting Sets", "Preprocess Runtime", scatter=True, trend_line=False)
+    # two_properties_graph(total_list, "Number of Minimal Hitting Sets","Average delay", scatter=True, trend_line=False)
+    # two_properties_graph(total_list, "Number of Minimal Hitting Sets", "Preprocess Runtime", scatter=True, trend_line=False)

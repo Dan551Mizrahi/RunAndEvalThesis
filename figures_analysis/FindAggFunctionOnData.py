@@ -37,12 +37,12 @@ def find_agg_function_on_data_from_path_to_data_folder(folder_path: str, key: st
 if __name__ == "__main__":
     big_folder_path = "/Users/dan/Desktop/FinalGeneratedData"
 
-    for folder in os.listdir(big_folder_path):
+    for folder in sorted(os.listdir(big_folder_path)):
         if folder.startswith("."):
             continue
         folder_path = os.path.join(big_folder_path, folder)
         data_path = os.path.join(folder_path, "data")
-        key = "Max Join Node Size"
+        key = "Treewidth"
         if os.path.isdir(data_path):
             print(f"Folder: {folder}")
             print(f"Length of data: {len(read_whole_folders_data(data_path))}")

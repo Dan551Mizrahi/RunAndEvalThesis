@@ -77,7 +77,7 @@ def running_times_plus_features(path: str, first_k = None, iterative = True):
 
     hypergraph = read_hypergraph(path)
 
-    rooted_dntd = RootedDisjointBranchNiceTreeDecomposition(hypergraph)
+    rooted_dntd = RootedDisjointBranchNiceTreeDecomposition(hypergraph, td_heuristic="min_degree")
 
     # Create features dict
     features_dict = Hypergraph_features(path, rooted_dntd)
